@@ -14,8 +14,18 @@ let admin_user = null;
 let member_user = null;
 const homedir = os.homedir();
 const hurleyIdentityPath = path.resolve(homedir, 'hyperledger-fabric-network/.hfc-org1');
+var myArgs = process.argv.slice(2);
 
+// console.log(myArgs[0])
+let name_user = 'user2'
+let operator = 'member'
 console.log('Store path:' + hurleyIdentityPath);
+if(typeof myArgs[0] != 'undefined'){
+    name_user=myArgs[0];
+}
+if(typeof myArgs[1] !== 'undefined'){
+    operator = myArgs[1]
+}
 
 // create the key value store as defined in the fabric-client/config/default.json 'key-value-store' setting
 Fabric_Client.newDefaultKeyValueStore({
@@ -45,16 +55,16 @@ Fabric_Client.newDefaultKeyValueStore({
 
     // at this point we should have the admin user
     // first need to register the user with the CA server
-    return fabric_ca_client.register({ enrollmentID: 'chaincodeAdmin', attrs: [{ name: 'admin', value: 'true', ecert: true }], role: 'client' }, admin_user);
+    return fabric_ca_client.register({ enrollmentID: name_user, attrs: [{ name: "Operator", value: operator, ecert: true }], role: 'client' }, admin_user);
 }).then((secret) => {
     // next we need to enroll the user with CA server
-    console.log('Successfully registered chaincodeAdmin - secret:' + secret);
+    console.log('Successfully registered - sec : '+name_user+' with organization : ' + operator);
 
-    return fabric_ca_client.enroll({ enrollmentID: 'chaincodeAdmin', enrollmentSecret: secret });
+    return fabric_ca_client.enroll({ enrollmentID: name_user, enrollmentSecret: secret });
 }).then((enrollment) => {
-    console.log('Successfully enrolled member user "chaincodeAdmin" ');
+    console.log('Successfully enrolled member user : ' + name_user);
     return fabric_client.createUser({
-        username: 'chaincodeAdmin',
+        username: name_user,
         mspid: 'org1MSP',
         cryptoContent: { privateKeyPEM: enrollment.key.toBytes(), signedCertPEM: enrollment.certificate }
     });
@@ -63,7 +73,7 @@ Fabric_Client.newDefaultKeyValueStore({
 
     return fabric_client.setUserContext(member_user);
 }).then(() => {
-    console.log('chaincodeAdmin was successfully registered and enrolled and is ready to interact with the fabric network');
+    console.log(name_user + ' was successfully registered and enrolled and is ready to interact with the fabric network');
 
 }).catch((err) => {
     console.error('Failed to register: ' + err);
